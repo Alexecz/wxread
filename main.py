@@ -43,20 +43,19 @@ def get_wr_skey():
     for cookie_data in COOKIE_DATA_VARIANTS:
         try:
             response = requests.post(RENEW_URL,headers=headers,cookies=cookies,data=json.dumps(cookie_data, separators=(',', ':')),timeout=10)
+            
+            logging.info(response.json())
+            logging.info(response.cookies)
+            
+            if 'wr_skey' in response.cookies:
+                return response.cookies['wr_skey'][:8]
+            else:
+                continue
         except requests.RequestException as exc:
             logging.warning(f"refresh_cookie 请求失败，payload={cookie_data}，原因：{exc}")
             continue
         
-        logging.info(response.json())
-        logging.info(response.cookies)
-        logging.info(response.raw)
-        # 优先从 response.cookies 获取（requests 自动解析 Set-Cookie）
-        if 'wr_skey' in response.cookies:
-            return response.cookies['wr_skey'][:8]
-
-        for cookie in response.headers.get('Set-Cookie', '').split(';'):
-            if "wr_skey" in cookie:
-                return cookie.split('=')[-1][:8]
+        
     return None
 
 def fix_no_synckey():
