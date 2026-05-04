@@ -65,7 +65,7 @@ def refresh_cookie():
     new_skey = get_wr_skey()
     if new_skey:
         cookies['wr_skey'] = new_skey
-        logging.info(f"密钥刷新成功，新密钥：{new_skey}")
+        logging.info(f"密钥刷新成功，新密钥：{new_skey[:2]}***")
         logging.info("重新本次阅读。")
     else:
         ERROR_CODE = "无法获取新密钥或者 WXREAD_CURL_BASH 配置有误，终止运行。"
