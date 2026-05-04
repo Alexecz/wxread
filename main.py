@@ -44,9 +44,6 @@ def get_wr_skey():
         try:
             response = requests.post(RENEW_URL,headers=headers,cookies=cookies,data=json.dumps(cookie_data, separators=(',', ':')),timeout=10)
             
-            logging.info(response.json())
-            logging.info(response.cookies)
-            
             if 'wr_skey' in response.cookies:
                 return response.cookies['wr_skey'][:8]
             else:
