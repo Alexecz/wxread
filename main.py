@@ -47,6 +47,10 @@ def get_wr_skey():
             logging.warning(f"refresh_cookie 请求失败，payload={cookie_data}，原因：{exc}")
             continue
 
+        # 优先从 response.cookies 获取（requests 自动解析 Set-Cookie）
+        if 'wr_skey' in response.cookies:
+            return response.cookies['wr_skey'][:8]
+
         for cookie in response.headers.get('Set-Cookie', '').split(';'):
             if "wr_skey" in cookie:
                 return cookie.split('=')[-1][:8]
