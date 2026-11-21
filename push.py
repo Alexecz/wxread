@@ -12,6 +12,9 @@ from config import (
     TELEGRAM_BOT_TOKEN,
     TELEGRAM_CHAT_ID,
     WXPUSHER_SPT,
+    WXPUSHER_APP_TOKEN,
+    WXPUSHER_UIDS,
+    WXPUSHER_BASE_URL,
 )
 
 logger = logging.getLogger(__name__)
@@ -85,6 +88,32 @@ class PushNotification:
                     time.sleep(sleep_time)
         return False
 
+    def push_wxpusher_app(self, content, is_success):
+        """WxPusher 标准推送（appToken + UID），与米游社签到使用同一个应用。"""
+        summary = f"微信读书-{'成功' if is_success else '失效/失败'}"
+        payload = {
+            "appToken": WXPUSHER_APP_TOKEN,
+            "content": content[:40000],
+            "summary": summary,
+            "contentType": 1,
+            "uids": WXPUSHER_UIDS,
+        }
+        attempts = 3
+        for attempt in range(attempts):
+            try:
+                response = requests.post(f"{WXPUSHER_BASE_URL}/api/send/message", json=payload, timeout=15)
+                response.raise_for_status()
+                result = response.json()
+                if result.get("code") != 1000:
+                    raise requests.exceptions.RequestException(f"code={result.get('code')} msg={result.get('msg')}")
+                logger.info("WxPusher 推送成功")
+                return True
+            except (requests.exceptions.RequestException, ValueError) as exc:
+                logger.error("WxPusher 推送失败: %s", exc)
+                if attempt < attempts - 1:
+                    time.sleep(30)
+        return False
+
     def push_serverChan(self, content, spt, is_success):
         attempts = 5
         url = self.server_chan_url.format(spt)
@@ -125,6 +154,8 @@ def push(content, method, is_success = True):
     if method == "telegram":
         return notifier.push_telegram(content, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID)
     if method == "wxpusher":
+        if WXPUSHER_APP_TOKEN and WXPUSHER_UIDS:
+            return notifier.push_wxpusher_app(content, is_success)
         return notifier.push_wxpusher(content, WXPUSHER_SPT)
     if method == "serverchan":
         return notifier.push_serverChan(content, SERVERCHAN_SPT, is_success)

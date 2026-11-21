@@ -8,7 +8,7 @@ import requests
 import urllib.parse
 from push import push
 from log_utils import setup_logging
-from config import data, headers, cookies, READ_NUM, PUSH_METHOD, book, chapter
+from config import data, headers, cookies, READ_NUM, PUSH_METHOD, PUSH_ONLY_FAILURE, book, chapter
 
 
 # 加密盐及其它默认值
@@ -186,7 +186,9 @@ while index <= READ_NUM:
 
 logging.info("阅读脚本已完成。")
 
-if PUSH_METHOD not in (None, ''):
+if PUSH_ONLY_FAILURE:
+    logging.info("PUSH_ONLY_FAILURE 已开启，成功不推送。")
+elif PUSH_METHOD not in (None, ''):
     logging.info("开始推送...")
     push(f"微信读书自动阅读完成。\n阅读时长：{(index - 1) * 0.5} 分钟。", PUSH_METHOD, is_success=True)
 else:

@@ -16,14 +16,24 @@ PUSHPLUS_TOKEN = "" or os.getenv("PUSHPLUS_TOKEN")
 # telegram推送时需填
 TELEGRAM_BOT_TOKEN = "" or os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = "" or os.getenv("TELEGRAM_CHAT_ID")
-# wxpusher推送时需填
+# wxpusher推送时需填：极简推送填 SPT；或者填 appToken + UID（与米游社签到同一个 WxPusher 应用）
 WXPUSHER_SPT = "" or os.getenv("WXPUSHER_SPT")
+WXPUSHER_APP_TOKEN = (os.getenv("WXPUSHER_APP_TOKEN") or "").strip()
+WXPUSHER_UIDS = [u.strip() for u in (os.getenv("WXPUSHER_UIDS") or "").split(",") if u.strip()]
+WXPUSHER_BASE_URL = (os.getenv("WXPUSHER_BASE_URL") or "https://wxpusher.zjiecode.com").rstrip("/")
+# 为 true 时只在失败/失效时推送，成功不打扰
+PUSH_ONLY_FAILURE = (os.getenv("PUSH_ONLY_FAILURE") or "").lower() in ("1", "true", "yes")
 # SeverChan推送时需填
 SERVERCHAN_SPT = "" or os.getenv("SERVERCHAN_SPT")
 
 
 # read接口的bash命令，本地部署时可对应替换headers、cookies
 curl_str = os.getenv('WXREAD_CURL_BASH')
+# 也可以把 curl 命令放在文件里（避免 .env 对 $ 等字符做变量替换）
+_curl_file = os.getenv('WXREAD_CURL_FILE')
+if not curl_str and _curl_file and os.path.isfile(_curl_file):
+    with open(_curl_file, encoding='utf-8') as _f:
+        curl_str = _f.read()
 
 # headers、cookies是一个省略模版，本地或者docker部署时对应替换
 cookies = {
