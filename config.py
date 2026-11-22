@@ -9,6 +9,15 @@ import re
 
 # 阅读次数 默认40次/20分钟
 READ_NUM = int(os.getenv('READ_NUM') or 40)
+# 随机阅读时长（分钟），如 "40-50"；设置后忽略 READ_NUM，总时长精确到秒随机，每次间隔 20~30 秒随机
+_read_minutes = (os.getenv('READ_MINUTES') or '').replace(' ', '')
+if _read_minutes:
+    _lo, _, _hi = _read_minutes.partition('-')
+    READ_SECONDS_RANGE = (int(float(_lo) * 60), int(float(_hi or _lo) * 60))
+    READ_INTERVAL_RANGE = (20, 30)
+else:
+    READ_SECONDS_RANGE = (READ_NUM * 30, READ_NUM * 30)
+    READ_INTERVAL_RANGE = (30, 30)
 # 需要推送时可选，可选pushplus、wxpusher、telegram
 PUSH_METHOD = "" or os.getenv('PUSH_METHOD')
 # pushplus推送时需填

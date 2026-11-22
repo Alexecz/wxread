@@ -8,7 +8,7 @@ import requests
 import urllib.parse
 from push import push
 from log_utils import setup_logging
-from config import data, headers, cookies, READ_NUM, PUSH_METHOD, PUSH_ONLY_FAILURE, book, chapter
+from config import data, headers, cookies, READ_SECONDS_RANGE, READ_INTERVAL_RANGE, PUSH_METHOD, PUSH_ONLY_FAILURE, book, chapter
 
 
 # 加密盐及其它默认值
@@ -100,9 +100,11 @@ refresh_cookie(strict=False)
 index = 1
 lastTime = int(time.time()) - 30
 synckey_repair_attempts = 0
-logging.info(f"一共需要阅读 {READ_NUM} 次。")
+target_seconds = random.randint(*READ_SECONDS_RANGE)
+read_seconds = 0
+logging.info(f"本次目标阅读时长：{target_seconds // 60} 分 {target_seconds % 60} 秒。")
 
-while index <= READ_NUM:
+while read_seconds < target_seconds:
     data.pop('s')
     data['b'] = random.choice(book)
     data['c'] = random.choice(chapter)
@@ -114,7 +116,7 @@ while index <= READ_NUM:
     data['sg'] = hashlib.sha256(f"{data['ts']}{data['rn']}{KEY}".encode()).hexdigest()
     data['s'] = cal_hash(encode_data(data))
 
-    refresh_print(f"阅读进度: 第 {index}/{READ_NUM} 次，已完成 {(index - 1) * 0.5:.1f} 分钟")
+    refresh_print(f"阅读进度: 第 {index} 次，已完成 {read_seconds}/{target_seconds} 秒")
     logging.debug("data: %s", data)
     try:
         response = requests.post(
@@ -144,9 +146,11 @@ while index <= READ_NUM:
         if 'synckey' in resData:
             synckey_repair_attempts = 0
             lastTime = thisTime
+            read_seconds += data['rt']
             index += 1
-            time.sleep(30)
-            refresh_print(f"阅读进度: 第 {min(index, READ_NUM + 1) - 1}/{READ_NUM} 次，已完成 {(index - 1) * 0.5:.1f} 分钟")
+            refresh_print(f"阅读进度: 第 {index - 1} 次，已完成 {read_seconds}/{target_seconds} 秒")
+            if read_seconds < target_seconds:
+                time.sleep(max(1, min(random.randint(*READ_INTERVAL_RANGE), target_seconds - read_seconds)))
         else:
             synckey_repair_attempts += 1
             if synckey_repair_attempts > SYNCKEY_REPAIR_LIMIT:
@@ -190,6 +194,6 @@ if PUSH_ONLY_FAILURE:
     logging.info("PUSH_ONLY_FAILURE 已开启，成功不推送。")
 elif PUSH_METHOD not in (None, ''):
     logging.info("开始推送...")
-    push(f"微信读书自动阅读完成。\n阅读时长：{(index - 1) * 0.5} 分钟。", PUSH_METHOD, is_success=True)
+    push(f"微信读书自动阅读完成。\n阅读时长：{read_seconds // 60} 分 {read_seconds % 60} 秒。", PUSH_METHOD, is_success=True)
 else:
     logging.info("未配置推送渠道，跳过推送。")
