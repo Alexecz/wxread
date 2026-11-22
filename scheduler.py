@@ -1,8 +1,10 @@
 import os
 import sys
 import logging
+import random
 import subprocess
-from datetime import datetime
+import time
+from datetime import datetime, timedelta
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.cron import CronTrigger
 
@@ -14,6 +16,13 @@ logging.basicConfig(
 )
 
 def run_job():
+    # 在 CRON_SCHEDULE 触发后随机延迟 0~RANDOM_DELAY_MINUTES 分钟（精确到秒）再开始
+    max_delay = int(float(os.getenv("RANDOM_DELAY_MINUTES") or 0) * 60)
+    if max_delay > 0:
+        delay = random.randint(0, max_delay)
+        start_at = datetime.now() + timedelta(seconds=delay)
+        logging.info(f"随机延迟 {delay} 秒，今日阅读将于 {start_at:%H:%M:%S} 开始。")
+        time.sleep(delay)
     logging.info("开始执行定时阅读任务...")
     try:
         # 以子进程运行 main.py，以保持运行环境的独立和纯净
